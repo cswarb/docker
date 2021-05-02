@@ -18,4 +18,5 @@ WORKDIR /home/app
 RUN npm install
 
 # Entry point command to start application
+# Can be overriden by command line instruction e.g. docker run my-app node file.js
 CMD [ "node", "/home/app/index.js" ]

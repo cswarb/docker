@@ -3,8 +3,18 @@
 
 Docker
 - Image - An application (or collection of applications) that execute inside the host OS
-- Container - A running Image in a containing environment
+Container 
+    - A running Image in a containing environment
+    - Containers are not meant to host an OS/Specific application, only host
+        - e.g. not meant to to run an ubuntu container, rather, build an image from it
+    - Once a task complete, the container exists
+    - A container only lives as long as the container as long as the process inside it is alternative
+        - If the app crashes, the container exits
+
+Images
 - Any docker image can actually run on any container runtime (container-d etc...)
+- A standalone application that runs a service/database etc
+
 
 Docker network
 - Allows separate container to talk to each other by defining the inside the same network
@@ -14,22 +24,33 @@ Docker network
     - 'create {name}', Create a network with specified name. To be referenced when running an image
 
 Commands
-- 'docker pull {name}', pulls an existing public containers depedencies 
-- 'docker run', pulls an existing public containers depedencies, AND runs and creates a container for a specified image
+- 'docker pull {image}', pulls an existing public containers depedencies 
+- 'docker run {image}', pulls an existing public containers depedencies, AND runs and creates a container for a specified image
     - '-d' Runs in detached mode
     - -p Specifys port forwarding host:image. e.g. -p 8080:8081
     - -e Add an environment flag that the base image requires for setup purposes. e.g. usernames and password
     - --name {name} - Define a name for the container
     - --network {name} - Define the network the container should run in
+- Can give a container a startup command by using:
+    - 'docker run {image} {startupCommand}'
+
 - 'docker start {id}, starts an existing container that has been created before by running docker run command
-    -
+
 - 'docker stop', stops a running container
+
 - 'docker ps'
     - '-a' List all running and stopped container
 
 - 'docker tag'
     - Tag the image for referencing in docker-compose, or pushing to a repo
     - Tag renames the image (by making a copy)
+
+- 'docker inspect {containerName}
+    - Details container status and network status, interal IP etc
+
+- 'docker logs {containerName}
+    - Get the latest logs from the container
+    - Can use tail -f to produce a 'live' log output of the container
 
 e.g.
 docker run \ 
@@ -41,6 +62,49 @@ docker run \
     --name mongo-express \ 
     --network mongo-network \ 
     mongo-express
+
+
+Network
+- Bridge
+    - Private network accessible by container
+    - Need to map from host to container to access externally
+        - Could also associate container to host network
+            e.g. --network=host
+        - Could have no network and are sandboxed/isolated
+            - e.g. --network=none
+
+- Can define own user network, and manually attach containers together with the same network or different networks depending on desired configuration
+- 'docker network create new-network'
+    - Attaching container to network via cmd - 'docker run my-app --network new-network', or docker-compose
+
+Containers create a hostname the same as their container name as it has a built in DNS server (127.0.0.11)
+    - e.g. 127.0.0.1 on the host would equal 'mysql' inside a container name 'mysql'
+
+In docker-compose, you can add references to networks you want to create to separate the networks you want to assign to different Services
+- Assume we want a split between front-end and back-end services:
+
+``` 
+# example docker-compose.yml
+version: '3'
+services:
+    mongo:
+        image: ...
+        networks:
+            - back-end
+    mongo-express:
+        image: ...
+        networks:
+            - back-end
+    front-end-app:
+        image: ...
+        networks:
+            - front-end
+            - back-end
+networks: 
+    front-end: 
+    back-end:
+```
+
 
 Debugging
 - 'docker exec -it {containerId}', allows to enter the container
