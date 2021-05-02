@@ -1,3 +1,9 @@
+#Docker Compose is a tool for defining and running multi-container Docker applications. 
+# With Compose, you use a YAML file to configure your application’s services. 
+# Then, with a single command, you create and start all the services from your configuration. 
+# By default, docker-compose expects the name of the Compose file as docker-compose.yml or docker-compose.yaml. 
+# If the compose file have different name we can specify it with -f flag.
+
 # docker-compose -f ./docker-compose.yml up -d
 # up = start all container that in in yml
 

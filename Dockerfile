@@ -1,4 +1,6 @@
 # Steps to build/serve this image
+# A Dockerfile is a text document that contains all the commands/Instruction a user could call on the command line to assemble an image.
+# Using docker build commmand we can build an image from a Dockerfile.
 
 # Import base image
 FROM node:14
