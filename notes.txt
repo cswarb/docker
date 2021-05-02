@@ -1,0 +1,137 @@
+# https://www.youtube.com/watch?v=fqMOX6JJhGo&t=1864s&ab_channel=freeCodeCamp.org
+# https://www.youtube.com/watch?v=3c-iBn73dDE&t=3653s&ab_channel=TechWorldwithNana
+
+Docker
+- Image - An application (or collection of applications) that execute inside the host OS
+- Container - A running Image in a containing environment
+- Any docker image can actually run on any container runtime (container-d etc...)
+
+Docker network
+- Allows separate container to talk to each other by defining the inside the same network
+- Port collisions normally don't happen as containers are isolated, by using them in a network will cause collision
+- 'docker network'
+    - 'ls', List all networks
+    - 'create {name}', Create a network with specified name. To be referenced when running an image
+
+Commands
+- 'docker pull {name}', pulls an existing public containers depedencies 
+- 'docker run', pulls an existing public containers depedencies, AND runs and creates a container for a specified image
+    - '-d' Runs in detached mode
+    - -p Specifys port forwarding host:image. e.g. -p 8080:8081
+    - -e Add an environment flag that the base image requires for setup purposes. e.g. usernames and password
+    - --name {name} - Define a name for the container
+    - --network {name} - Define the network the container should run in
+- 'docker start {id}, starts an existing container that has been created before by running docker run command
+    -
+- 'docker stop', stops a running container
+- 'docker ps'
+    - '-a' List all running and stopped container
+
+- 'docker tag'
+    - Tag the image for referencing in docker-compose, or pushing to a repo
+    - Tag renames the image (by making a copy)
+
+e.g.
+docker run \ 
+    -d \ 
+    -p8081:8081 \ 
+    -e ME_CONFIG_MONGODB_ADMINUSERNAME=admin \ 
+    -e ME_CONFIG_MONGODB_ADMINPASSWORD=password \ 
+    -e ME_CONFIG_MONGODB_SERVER=mongo-db \ 
+    --name mongo-express \ 
+    --network mongo-network \ 
+    mongo-express
+
+Debugging
+- 'docker exec -it {containerId}', allows to enter the container
+    - e.g. 'docker exec -it ec98793e95d6 /bin/sh', 'docker exec -it ec98793e95d6 /bin/bash'
+
+Docker compose
+- To run multiple containers at same time, and an alternative to using command line to start/stop individual images
+    - In example where 2 containers, like mongo, and mongo express, need to be run at the same time, 
+    can use a compose file to tie them together in a network, and make create a shareable config, 
+    rather than having to run images 1 by 1
+- Defined by docker-compose.yml
+- Creates own private network automatically
+- 'docker-compose -f ./docker-compose.yml up -d', starts all associated images in compose file
+- 'docker-compose -f ./docker-compose.yml down', stops all images
+
+- Compose can also reference a local image, as well as public ones (like on dockerhub)
+    - To do this, you must build an image locally that creates an image of your application using a Dockerfile
+    - Then when it is built, present in 'docker image ls' and everything is setup correctly without error, then you
+        can add it in your docker-compose yml, and configure it as another service
+
+Building own Dockerfile
+- A blueprint for building images
+- To deploy, your app needs to be packaged into own docker container, by creating a Dockerfile. 
+So to make your own work portable and useable by others, there is a need to create a docker image from your application
+- Used for other systems to build from
+- Capital letters define commands that the Dockerfile should run
+- In this case, a build artifact of JS/HTML, and any other front-end/backend assets
+- All commands will apply to the container, not the host machine (Apart from COPY command)
+
+Dockerfile anatomy & flow
+- Start with a base image (that itself is based on other images)
+    FROM {baseimage}
+- ENV 
+    - Define environment variables
+    - ENV MONOGO_PASSWORD=...
+    - Alternative to definining variables in command line / docker compose
+        - Better to define in docker-compose file as it's easier to change, instead of rebuilding image
+- RUN any linux commands needed, and can be run multiple times
+    - Create folders for example
+        - RUN mkdir -p /home/app
+            e.g. This directory will live inside the container
+- COPY
+    - Copy files from host to container
+    - COPY {host location e.g. '.'} {container location e.g. 'app/home'}
+- CMD
+    - Entry point command, can only be run once
+    - Should specify what needs to be done to start the application
+    - For a node js app, it would be something like:
+        - CMD [ "NODE", "index.js" ]
+
+Build an image from Dockerfile
+- 'docker build'
+    - '-t {name}:{version}' -Provide a tag name. e.g. -t my-app:1.0
+    - '.' - Location of Dockerfile. e.g. '.'
+    e.g. 
+        - docker build -t my-app:1.0 .
+    - After building an image, it will appear in 'docker image ls'
+    - You can then create a container from the image as usual via 'docker run {imageName}:{tag}'
+    - After any adjustment to the Dockerfile, you must rebuild the image
+
+Delete an image
+- First stop any container that references the image
+    - 'docker rm {containerId}'
+- Then delete the image
+    - 'docker rmi {IMAGE_ID}'
+
+
+Private repo on registry (on AWS)
+- Services > ECR (elastic container registry)
+- Create a repo. You create a Docker repo per image, and you store different tags/version of same image
+- The idea is to push the image you have locally onto the ECR, and then you can reference it in your docker-compose file,
+    and others can use and depend on it
+- 'View push commands'
+    - You have to login to the private repo using 'docker login'
+        - If pushing from a CD/CI environment like Jenkins, you would need to give Jenkins auth credentials to handle the push
+        - AWS will provide you the docker login command
+            - AWS CLI needs to be installed
+            - Credentials must be configured
+- Then, build the app
+    - 'docker build -t my-app .'
+- Then tag the image appropriately
+    - e.g. 'docker tag my-app:latest {repoUrl/my-app:latest}' 'latest' could be '1.0' to tag it as a specific version number
+- Then push the image
+    - To push the image to the remote repo
+    - 'docker push {repoUrl/my-app:latest}'
+    - Must specify which repo url otherwise it will think docker hub
+
+- Making changes to the Dockerfile, or build artifcats will require a new version of the image to be pushed, 
+    so repeat the steps above, and build/tag the image with an incremented version
+
+
+Deploying onto development/integration server
+- Dev server needs to login to pull from private repo, and pull in all images from docker-compose - not for public ones though.
+- docker-compose file would then be used to deploy apps/services

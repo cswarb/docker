@@ -1,0 +1,91 @@
+
+If you did a docker compose with mongo and mongo express, but didn't want to add your app image in the compose file,
+you would need to run them on the same docker network so they could communicate.
+
+so up the compose containers and specify networks in the yml. Note the network they get joined to in the logs
+-  docker-compose -f ./docker-compose.yml up
+
+Build your app image
+- docker build -t my-app:1.0 .
+
+Run the app image, and provide the network that was logged in the compose up step
+- docker run my-app:1.0 --name my-app --network mongo-network node
+
+
+
+
+
+
+
+# https://stackoverflow.com/questions/53287202/cant-connect-node-docker-container-to-mongo-docker-container
+
+
+/*
+mongoose
+  .connect(
+    'mongodb://127.0.0.1:27017/test2',
+*/
+
+
+
+
+---
+
+
+
+
+
+You cannot connect your application to mongo that way. 127.0.0.1 refers to the localhost of the container, not the host. You have two options:
+
+Create a network and add both containers to it. Then use mongodb://mongo:27017/test2 to reach the mongo container. Docker will use the service name as a host so you can reach it by that name.
+
+Bind mongo to 0.0.0.0 (omit the 127.0.0.1 from the port declaration) and connect to the database using the bridge ip address.
+
+Consider the first option, because the second one will expose your mongo database to the internet if you don't have a firewall in place.
+
+For example:
+
+version: '3.5'
+services:
+  app:
+    container_name: docker-node-mongo
+    restart: always
+    build: .
+    ports:
+      - '3001:3000'
+    networks:
+      - mongo
+
+networks:
+  mongo:
+    external: true
+Then on your mongo compose file:
+
+version: '3.5'
+services:
+  mongo:
+    restart: always
+    image: mongo
+    container_name: mongo
+    expose:
+      - 27017
+    volumes:
+      - ./mongo_data:/data/db
+    ports:
+      - "127.0.0.1:27017:27017"
+    networks:
+      - mongo
+
+networks:
+  mongo:
+    name: mongo
+Then on your code:
+
+mongoose
+  .connect(
+    'mongodb://mongo:27017/test2',
+    { useNewUrlParser: true }
+  )
+  .then(() => console.log('MongoDB Connected'))
+  .catch(err => console.log("errorErrorError"));
+edit: updated network names

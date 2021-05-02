@@ -1,0 +1,38 @@
+# docker-compose -f ./docker-compose.yml up -d
+# up = start all container that in in yml
+
+# docker-compose -f ./docker-compose.yml down
+
+version: '3'
+services:
+    # Use a locally built image by providing the name and tag, and then all applications can share the same network
+    # npm start equivalent
+    # references the local image in this case for my-app, but can link to any public/private repo hosted image
+    my-app:
+        image: my-app:1.0
+        ports: 
+            # Our app runs on 3000, so we need to bind our host to 3000
+            - 3000:3000
+    mongo-db:
+    # docker run -d -p27017:27017 -e MONGO_INITDB_ROOT_USERNAME=admin -e MONGO_INITDB_ROOT_PASSWORD=password --name mongo-db --network mongo-network mongo
+        image: mongo
+        ports: 
+            - 27017:27017
+        environment: 
+            - MONGO_INITDB_ROOT_USERNAME=admin
+            - MONGO_INITDB_ROOT_PASSWORD=password
+        # net: 
+        # It is not neccassary to provide a network, as docker compose will create a shared network for these images automatically
+        #     mongo-network
+    mongo-express:
+    # docker run -d -p8081:8081 -e ME_CONFIG_MONGODB_ADMINUSERNAME=admin -e ME_CONFIG_MONGODB_ADMINPASSWORD=password -e ME_CONFIG_MONGODB_SERVER=mongo-db --name mongo-express --network mongo-network mongo-express
+        image: mongo-express
+        ports: 
+            - 8081:8081
+        environment: 
+            - ME_CONFIG_MONGODB_ADMINUSERNAME=admin
+            - ME_CONFIG_MONGODB_ADMINPASSWORD=password
+            - ME_CONFIG_MONGODB_SERVER=mongo-db
+        # net: 
+        # It is not neccassary to provide a network, as docker compose will create a shared network for these images automatically
+        #     mongo-network

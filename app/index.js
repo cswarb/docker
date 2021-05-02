@@ -1,10 +1,18 @@
 var express = require('express');
 var mongoose = require('mongoose');
 var app = express();
-var User = require('./app/model');
+var User = require('./model');
 
-//mongoose.createConnection?
-mongoose.connect('mongodb://localhost:27017/users', {
+//Docker sets up the service name as configured in docker-compose as the hostname
+
+// use when starting application locally
+let mongoUrlLocal = "mongodb://localhost:27017/users";
+// use when starting application as docker container
+let mongoUrlDocker = "mongodb://mongo-db:27017/users";
+
+
+// mongoose.createConnection?
+mongoose.connect(mongoUrlDocker, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
     auth: {
@@ -22,7 +30,7 @@ mongoose.connect('mongodb://localhost:27017/users', {
     console.log('mongoose connection success');
 
     app.get('/', function (req, res) {
-        res.send(JSON.stringify(connection));
+        res.send('hi');
     });
 
     app.get('/user/:name', function (req, res) {
